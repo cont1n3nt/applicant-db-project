@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - Конкурсные списки{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>📊 Визуализация конкурсных списков</h2>
+    <p class="subtitle">Отображение всех абитуриентов с каскадом приоритетов</p>
+</div>
+
+<div class="stats-panel">
+    <div class="stat-card">
+        <div class="stat-value">{{ total_applicants }}</div>
+        <div class="stat-label">Всего абитуриентов</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ with_consent }}</div>
+        <div class="stat-label">С согласием</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ last_update or 'Н/Д' }}</div>
+        <div class="stat-label">Дата обновления</div>
+    </div>
+</div>
+
+<!-- Панель управления -->
+<div class="control-panel">
+    <div class="control-section">
+        <h3>📤 Загрузка конкурсных списков</h3>
+        <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="upload-form">
+            <div class="form-group">
+                <label for="date">Дата (формат: дд_мм):</label>
+                <input type="text" id="date" name="date" placeholder="01_08" required>
+            </div>
+            <div class="form-group">
+                <label for="file">CSV файл:</label>
+                <input type="file" id="file" name="file" accept=".csv" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Загрузить</button>
+        </form>
+    </div>
+
+    <div class="control-section">
+        <h3>🧮 Расчет проходных баллов</h3>
+        <form method="POST" action="{{ url_for('calculate') }}" class="calculate-form">
+            <input type="hidden" name="file" value="{{ selected_file }}">
+            <p>Рассчитать проходные баллы для текущей даты с учетом приоритетов абитуриентов</p>
+            <button type="submit" class="btn btn-success">Рассчитать проходные баллы</button>
+        </form>
+    </div>
+</div>
+
+<!-- Фильтры и сортировка -->
+<div class="filter-panel">
+    <h3>🔍 Фильтрация и сортировка</h3>
+    <form method="GET" action="{{ url_for('index') }}" class="filter-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="file">Дата:</label>
+                <select id="file" name="file" onchange="this.form.submit()">
+                    {% for f in files %}
+                        <option value="{{ f }}" {% if f == selected_file %}selected{% endif %}>{{ f }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="program_filter">Программа:</label>
+                <select id="program_filter" name="program_filter" onchange="this.form.submit()">
+                    <option value="all" {% if program_filter == 'all' %}selected{% endif %}>Все программы</option>
+                    {% for code, prog in programs.items() %}
+                        <option value="{{ code }}" {% if program_filter == code %}selected{% endif %}>{{ prog.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="sort_by">Сортировка:</label>
+                <select id="sort_by" name="sort_by" onchange="this.form.submit()">
+                    <option value="total_score" {% if sort_by == 'total_score' %}selected{% endif %}>По баллам</option>
+                    <option value="id" {% if sort_by == 'id' %}selected{% endif %}>По ID</option>
+                    <option value="priority" {% if sort_by == 'priority' %}selected{% endif %}>По приоритету</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="order">Порядок:</label>
+                <select id="order" name="order" onchange="this.form.submit()">
+                    <option value="desc" {% if order == 'desc' %}selected{% endif %}>По убыванию</option>
+                    <option value="asc" {% if order == 'asc' %}selected{% endif %}>По возрастанию</option>
+                </select>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Таблица абитуриентов -->
+<div class="table-container">
+    <h3>📋 Список абитуриентов ({{ applicants|length }} записей)</h3>
+    {% if applicants %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Программа</th>
+                        <th>Приоритет</th>
+                        <th>Физика/ИКТ</th>
+                        <th>Русский язык</th>
+                        <th>Математика</th>
+                        <th>Доп. баллы</th>
+                        <th>Сумма баллов</th>
+                        <th>Согласие</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for applicant in applicants %}
+                        <tr class="{% if applicant.has_consent %}with-consent{% endif %}">
+                            <td><strong>{{ applicant.id }}</strong></td>
+                            <td>
+                                <span class="program-badge program-{{ applicant.program_code }}">
+                                    {{ applicant.program_name }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="priority-badge priority-{{ applicant.priority }}">
+                                    {{ applicant.priority }}
+                                </span>
+                            </td>
+                            <td>{{ applicant.physics_ict }}</td>
+                            <td>{{ applicant.russian }}</td>
+                            <td>{{ applicant.math }}</td>
+                            <td>{{ applicant.extra }}</td>
+                            <td><strong>{{ applicant.total_score }}</strong></td>
+                            <td>
+                                {% if applicant.has_consent %}
+                                    <span class="consent-badge consent-yes">✓ Да</span>
+                                {% else %}
+                                    <span class="consent-badge consent-no">✗ Нет</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>📭 Нет данных для отображения. Загрузите конкурсные списки.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Информационная панель -->
+<div class="info-panel">
+    <h3>ℹ️ Информация</h3>
+    <ul>
+        <li><strong>Время визуализации:</strong> Не более 3 секунд (согласно п.12 технических требований)</li>
+        <li><strong>Приоритеты:</strong> От 1 до 4 (1 - наивысший приоритет)</li>
+        <li><strong>Редактирование:</strong> Операции изменения списков в интерфейсе исключены (согласно п.12)</li>
+        <li><strong>Загрузка данных:</strong> Время загрузки не более 5 секунд (согласно п.3)</li>
+    </ul>
+</div>
+
+{% endblock %}

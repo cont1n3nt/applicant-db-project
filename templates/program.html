@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}{{ program_name }} - Конкурсные списки{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>📚 {{ program_name }}</h2>
+    <p class="subtitle">Конкурсные списки по образовательной программе</p>
+</div>
+
+<div class="program-info-panel">
+    <div class="stat-card">
+        <div class="stat-value">{{ seats }}</div>
+        <div class="stat-label">Бюджетных мест</div>
+    </div>
+    <div class="stat-card {% if passing_score %}stat-success{% else %}stat-warning{% endif %}">
+        <div class="stat-value">{{ passing_score if passing_score else 'НЕДОБОР' }}</div>
+        <div class="stat-label">Проходной балл</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ applicants|length }}</div>
+        <div class="stat-label">Абитуриентов</div>
+    </div>
+</div>
+
+<!-- Фильтры -->
+<div class="filter-panel">
+    <h3>🔍 Фильтрация</h3>
+    <form method="GET" action="{{ url_for('program_page', code=program_code) }}" class="filter-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="file">Дата:</label>
+                <select id="file" name="file" onchange="this.form.submit()">
+                    {% for f in files %}
+                        <option value="{{ f }}" {% if f == selected_file %}selected{% endif %}>{{ f }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="sort_by">Сортировка:</label>
+                <select id="sort_by" name="sort_by" onchange="this.form.submit()">
+                    <option value="total_score" {% if sort_by == 'total_score' %}selected{% endif %}>По баллам</option>
+                    <option value="priority" {% if sort_by == 'priority' %}selected{% endif %}>По приоритету</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="order">Порядок:</label>
+                <select id="order" name="order" onchange="this.form.submit()">
+                    <option value="desc" {% if order == 'desc' %}selected{% endif %}>По убыванию</option>
+                    <option value="asc" {% if order == 'asc' %}selected{% endif %}>По возрастанию</option>
+                </select>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Таблица абитуриентов -->
+<div class="table-container">
+    <h3>📋 Список абитуриентов ({{ applicants|length }} записей)</h3>
+    {% if applicants %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>ID</th>
+                        <th>Приоритет</th>
+                        <th>Физика/ИКТ</th>
+                        <th>Русский язык</th>
+                        <th>Математика</th>
+                        <th>Доп. баллы</th>
+                        <th>Сумма баллов</th>
+                        <th>Согласие</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set ns = namespace(consent_count=0) %}
+                    {% for applicant in applicants %}
+                        {% if applicant.has_consent %}
+                            {% set ns.consent_count = ns.consent_count + 1 %}
+                        {% endif %}
+                        <tr class="{% if applicant.has_consent %}with-consent{% endif %} 
+                                   {% if applicant.has_consent and ns.consent_count <= seats %}enrolled{% endif %}">
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ applicant.id }}</strong></td>
+                            <td>
+                                <span class="priority-badge priority-{{ applicant.priority }}">
+                                    {{ applicant.priority }}
+                                </span>
+                            </td>
+                            <td>{{ applicant.physics_ict }}</td>
+                            <td>{{ applicant.russian }}</td>
+                            <td>{{ applicant.math }}</td>
+                            <td>{{ applicant.extra }}</td>
+                            <td><strong>{{ applicant.total_score }}</strong></td>
+                            <td>
+                                {% if applicant.has_consent %}
+                                    <span class="consent-badge consent-yes">✓ Да</span>
+                                {% else %}
+                                    <span class="consent-badge consent-no">✗ Нет</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if applicant.has_consent and ns.consent_count <= seats %}
+                                    <span class="status-badge status-enrolled">🎓 Зачислен</span>
+                                {% elif applicant.has_consent %}
+                                    <span class="status-badge status-waiting">⏳ В резерве</span>
+                                {% else %}
+                                    <span class="status-badge status-not-enrolled">— Не зачислен</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>📭 Нет данных для отображения.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Информация о проходном балле -->
+<div class="info-panel">
+    <h3>ℹ️ Информация о проходном балле</h3>
+    <p><strong>Проходной балл</strong> рассчитывается с учетом:</p>
+    <ul>
+        <li>Приоритетов образовательных программ, выбранных абитуриентами</li>
+        <li>Только абитуриентов, предоставивших согласие о зачислении</li>
+        <li>Количества бюджетных мест: <strong>{{ seats }}</strong></li>
+    </ul>
+    {% if passing_score %}
+        <p class="highlight">
+            💡 Проходной балл: <strong>{{ passing_score }}</strong> 
+            (балл последнего зачисленного абитуриента)
+        </p>
+    {% else %}
+        <p class="highlight warning">
+            ⚠️ НЕДОБОР - количество абитуриентов с согласием меньше количества мест
+        </p>
+    {% endif %}
+</div>
+
+<div class="action-buttons">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Вернуться к общему списку</a>
+</div>
+
+{% endblock %}

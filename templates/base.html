@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Система управления конкурсными списками{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>📚 Конкурсные списки абитуриентов</h1>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">Главная</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropbtn">Программы ▼</a>
+                    <div class="dropdown-content">
+                        <a href="{{ url_for('program_page', code='pm') }}">Прикладная математика</a>
+                        <a href="{{ url_for('program_page', code='ivt') }}">Информатика и ВТ</a>
+                        <a href="{{ url_for('program_page', code='itss') }}">Инфокоммуникационные технологии</a>
+                        <a href="{{ url_for('program_page', code='ib') }}">Информационная безопасность</a>
+                    </div>
+                </li>
+                <li><a href="{{ url_for('reports') }}" class="{% if request.endpoint == 'reports' %}active{% endif %}">Отчеты</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message|safe }}
+                        <button class="close-alert" onclick="this.parentElement.style.display='none'">×</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Система управления конкурсными списками. Разработано согласно техническим требованиям.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Автоматическое скрытие уведомлений через 5 секунд
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.style.display = 'none', 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

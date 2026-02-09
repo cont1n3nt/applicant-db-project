@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Отчеты - Конкурсные списки{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>📄 Формирование отчетов</h2>
+    <p class="subtitle">PDF отчеты по конкурсным спискам абитуриентов</p>
+</div>
+
+<div class="report-info">
+    <h3>📋 Структура отчета</h3>
+    <p>Согласно п.14 технических требований, PDF отчет содержит:</p>
+    <ul class="report-structure">
+        <li>📅 <strong>Дата и время формирования отчета</strong></li>
+        <li>📊 <strong>Проходные баллы на ОП</strong> - сумма баллов последнего абитуриента, предоставившего согласие на зачисление (или "НЕДОБОР" при недостаточном количестве)</li>
+        <li>📈 <strong>Динамика проходного балла</strong> - графики изменения проходных баллов по всем дням приемной кампании</li>
+        <li>🎓 <strong>Списки зачисленных абитуриентов</strong> - 4 списка (по каждой образовательной программе) с указанием ID и суммы баллов</li>
+        <li>📉 <strong>Статистика по каждой ОП</strong> - таблица с детальной информацией по программам</li>
+    </ul>
+</div>
+
+<div class="reports-container">
+    <h3>🗂️ Доступные отчеты</h3>
+    {% if dates %}
+        <div class="reports-grid">
+            {% for date in dates %}
+                <div class="report-card">
+                    <div class="report-icon">📊</div>
+                    <div class="report-details">
+                        <h4>Отчет за {{ date }}</h4>
+                        <p>Конкурсные списки на {{ date }}</p>
+                    </div>
+                    <div class="report-actions">
+                        <a href="{{ url_for('report_pdf', date=date) }}" class="btn btn-primary" download>
+                            📥 Скачать PDF
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>📭 Нет доступных отчетов. Загрузите конкурсные списки и рассчитайте проходные баллы.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Перейти к загрузке</a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="info-panel">
+    <h3>ℹ️ Информация</h3>
+    <ul>
+        <li>Отчеты формируются в формате PDF</li>
+        <li>Каждый отчет содержит полную информацию о конкурсной ситуации на указанную дату</li>
+        <li>Проходные баллы рассчитываются с учетом приоритетов абитуриентов</li>
+        <li>Динамика проходных баллов отображается по всем доступным датам</li>
+    </ul>
+</div>
+
+<div class="action-buttons">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Вернуться на главную</a>
+</div>
+
+<style>
+.report-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.report-info h3 {
+    margin-top: 0;
+    font-size: 1.5em;
+}
+
+.report-structure {
+    list-style: none;
+    padding: 0;
+}
+
+.report-structure li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.report-structure li:last-child {
+    border-bottom: none;
+}
+
+.reports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.report-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.report-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    border-color: #667eea;
+}
+
+.report-icon {
+    font-size: 3em;
+    margin-bottom: 15px;
+}
+
+.report-details h4 {
+    margin: 10px 0 5px 0;
+    color: #333;
+}
+
+.report-details p {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.report-actions {
+    margin-top: 15px;
+    width: 100%;
+}
+
+.report-actions .btn {
+    width: 100%;
+}
+</style>
+
+{% endblock %}
